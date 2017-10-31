@@ -16,9 +16,13 @@ class Proceso:
         self.t-=1
         print("Preparando",self.nombre,self.idProceso,"quantum",self.quantum,"t",self.t,"recurso",self.recurso)
             
-    def asignarQ(self):
-        return np.random.randint(5,15) 
+    def asignarQ(self): 
+        if self.t>10:
+            return (round(self.t*0.6)) 
+        else:
+            return self.t
 
+        
 class PolloConPapas(Proceso):
     def __init__(self,idProceso,recurso,quantum=0,nombre="Pollo con papas",t=25,tr=0):
         Proceso.__init__(self,idProceso,quantum,nombre,recurso,t,tr)

@@ -24,11 +24,11 @@ class Procesador(threading.Thread):
         while not self.proceso==None or not q.empty() or not self.lis.es_vacia() or not self.sus.es_vacia() or not self.blo.es_vacia():
             
             time.sleep(0.1)
-            for i in r:
-                print("recurso",i,"estado",i.libre)
+            #for i in r:
+             #   print("recurso",i,"estado",i.libre)
 
-            print("lis",self.lis.items,"procesador",self,"\nsus",self.sus.items,"procesador",self,"\nblo",self.blo.items,"procesador",self)
-            print("procesador",self,"ocupado",not self.proceso==None)
+            #print("lis",self.lis.items,"procesador",self,"\nsus",self.sus.items,"procesador",self,"\nblo",self.blo.items,"procesador",self)
+            #print("procesador",self,"ocupado",not self.proceso==None)
             if not q.empty():self.asignar(q.get())
             if not self.lis.es_vacia() and self.proceso==None:
                 posible=self.lis.desencolar()
