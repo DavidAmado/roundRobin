@@ -9,11 +9,11 @@ class Cola:
 	        """ Agrega el elemento x a la cola. """
 	        # Encolar es agregar al final de la cola.
 	        self.items.append(x)
-	def desencolar(self):
+	def desencolar(self,n=0):
 	        """ Devuelve el elemento inicial y lo elimina de la cola.
 	            Si la cola está vacía levanta una excepción. """
 	        try:
-	            return self.items.pop(0)
+	            return self.items.pop(n)
 	        except IndexError:
 	            raise ValueError("La cola está vacía")
 	def es_vacia(self):
