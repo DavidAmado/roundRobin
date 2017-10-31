@@ -1,122 +1,90 @@
-import time
-import abc
+import cola
+import procesos as ps
+import recursos as rs
+import queue
 import threading
-import numpy as np
-class Nodo:
-    def __init__(self,info):
-        self.info=info
- 
-
-    def __str__(self):
-        return (str(self.info))
-
-class Cola:
-    def __init__(self):
-        self.elementos=[]
-    
-    def push(self,nuevo):
-        self.elementos.append(nuevo)
-
-    def pop(self):
-        if not self.elementos==[]:
-            return self.elementos.pop(0)
-        else:
-            print("no hay elementos en la cola")
-            return None
-
-class Procesador:
-    def __init__(self,idProcesador):
-        self.id=idProcesador
+class Procesador(threading.Thread):
+    def __init__(self,idProcesador,*args):
+        threading.Thread.__init__(self)
+        self.idProcesador=idProcesador
         self.ocupado=False
         self.proceso=None
-        self.lis=Cola()
-        self.blo=Cola()
-        self.sus=Cola()
-
-    def procesar(self):
-        self.ocupado=True
-        self.proceso=self.lis.pop()
-        self.proceso.start()
+        self.lis=cola.Cola()
+        self.blo=cola.Cola()
+        self.sus=cola.Cola()
+        self._args=args
+    def __str__(self):
+        return str(self.idProcesador)
+    def run(self):
+        while True:
+            self.procesar(*self._args)
+    def procesar(self,q):
+        while not q.empty():
+            self.asignar(q.get())
+            if self.lis.es_vacia(): break
+            self.proceso=self.lis.desencolar()
+            print("comenzando proceso ",self.proceso," en el procesador ",self)
+            self.proceso.procesar()
+            self.revisarColaSus()
+            self.revisarColaBlo()
+            if self.proceso.t>0:
+                self.proceso.tr=5
+                self.sus.encolar(self.proceso)
+                print("se reencolo el proceso a suspendidos")
+            else:
+                print("terminando proceso",self.proceso," en el procesador",self)
+                q.task_done()
+    def revisarColaSus(self):
+        for i in range(len(self.sus.items)):
+            self.sus.items[i].tr-=1
+        if not self.sus.es_vacia():
+            print(self.sus.items[0],"tr",self.sus.items[0].tr)
+            print(" ")
+            if self.sus.items[0].tr==0:
+                self.lis.encolar(self.sus.desencolar())
+                print("se saco un proceso y entro a la cola de listo")
+    def revisarColaBlo(self):
+        pass
 
     def asignar(self,proceso):
         proceso.quantum=proceso.asignarQ()
-        self.lis.push(proceso)
+        self.lis.encolar(proceso)
+        print("asignacion",self.lis.items)
 
 class cliente:
     def __init__(self):
-        self.procesador1=Procesador(1)        
-        self.procesador2=Procesador(2)      
-        self.procesador3=Procesador(3)
+        self.cola1=queue.Queue()
+        self.cola1.put(ps.Malteada(0))
+        self.cola2=queue.Queue()
+        self.cola2.put(ps.PolloConPapas(0))
+        self.cola3=queue.Queue()
+        self.cola3.put(ps.Ensalada(0))
+        self.procesador1=Procesador(1,self.cola1)        
+        self.procesador2=Procesador(2,self.cola2)      
+        self.procesador3=Procesador(3,self.cola3)
     def iniciar(self):
-        self.procesador1.asignar(PolloConPapas(1))
-        self.procesador1.procesar()
-        self.procesador2.asignar(Ensalada(2))
-        self.procesador2.procesar()
-        self.procesador3.asignar(Malteada(3))
-        self.procesador3.procesar()
-        #self.procesador1.proceso.join()
-        #self.procesador2.proceso.join()
-        #self.procesador3.proceso.join()
-       
-class Recurso:
-    def __init__(self,nombre):
-        self.nombre=nombre
-        self.libre=True
-    def __str__(self):
-        return(nombre)
-    def utilizar(self):
-        if self.libre:
-            print("usando el ",self.nombre)
-            self.libre=False
-        else:
-            print("el ",self.nombre," esta ocupado")
-    def liberar(self):
-        if not self.libre:
-            print("el ",self.nombre," fue liberado")
-            self.libre=True
-        else:
-            print("el ",self.nombre," no estaba siendo usado")
+        self.procesador1.start()
+        self.procesador2.start()
+        self.procesador3.start()
+        self.cola1.put(ps.Malteada(1))
+        self.cola2.put(ps.PolloConPapas(1))
+        self.cola3.put(ps.PolloConPapas(2))
+        self.cola1.put(ps.Malteada(2))
+        self.cola2.put(ps.Ensalada(1))
+        self.cola3.put(ps.PolloConPapas(3))
+        self.cola2.put(ps.Malteada(3))
+        self.cola1.put(ps.Ensalada(2))
+        self.cola2.put(ps.Ensalada(3))
+        self.cola1.put(ps.Malteada(4))
+        self.cola3.put(ps.PolloConPapas(4))
+        self.cola1.put(ps.Ensalada(4))
+        self.cola1.put(ps.Malteada(5))
 
-class Horno(Recurso):
-    def __init__(self,nombre="Horno"):
-        Recurso.__init__(self,nombre)
+        self.cola1.join()
+        self.cola2.join()
+        self.cola3.join()
 
-class Cuchillos(Recurso):
-    def __init__(self,nombre="Cuchillos"):
-        Recurso.__init__(self,nombre)
-
-class Licuadora(Recurso):
-    def __init__(self,nombre="Licuadora"):
-        Recurso.__init__(self,nombre)
-
-class Proceso(threading.Thread):
-    def __init__(self,idProceso,quantum,nombre,recurso,t):
-        threading.Thread.__init__(self)
-        self.idProceso=idProceso
-        self.nombre=nombre
-        self.recurso=recurso
-        self.t=t
-        self.quantum=quantum
-    def run(self):
-        while self.quantum:
-            time.sleep(1)
-            print("Preparando ",self.nombre,", quantum ",self.quantum)
-            self.quantum-=1
-        self.join()
-    def asignarQ(self):
-        return np.random.randint(5,15) 
-
-class PolloConPapas(Proceso):
-    def __init__(self,idProceso,quantum=0,nombre="Pollo con papas",recurso="Horno",t=25):
-        Proceso.__init__(self,idProceso,quantum,nombre,recurso,t)
-
-class Malteada(Proceso):
-    def __init__(self,idProceso,quantum=0,nombre="Malteada",recurso="Licuadora",t=5):
-        Proceso.__init__(self,idProceso,quantum,nombre,recurso,t)
-
-class Ensalada(Proceso):
-    def __init__(self,idProceso,quantum=0,nombre="Ensalada",recurso="Cuchillo",t=12):
-        Proceso.__init__(self,idProceso,quantum,nombre,recurso,t)
+         
 
 cliente = cliente()
 cliente.iniciar()
