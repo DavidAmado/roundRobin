@@ -21,7 +21,7 @@ class Proceso:
         print("Preparando",self.nombre,self.idProceso,"quantum",self.quantum,"t",self.t,"recurso",self.recurso)
             
     def asignarQ(self): 
-        if self.t>6:
+        if self.t>7:
             return(round(self.t*0.6)) 
         else:
             return self.t

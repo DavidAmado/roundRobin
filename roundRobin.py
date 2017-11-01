@@ -4,6 +4,7 @@ import procesos as ps
 import recursos as rs
 import queue
 import threading
+import numpy as np
 class Procesador(threading.Thread):
     def __init__(self,idProcesador,*args):
         threading.Thread.__init__(self)
@@ -22,7 +23,7 @@ class Procesador(threading.Thread):
     def usarProcesador(self,q):
         while not self.proceso==None or not q.empty() or not self.lis.es_vacia() or not self.sus.es_vacia() or not self.blo.es_vacia():
             
-            time.sleep(0.1)
+            time.sleep(0.01)
             
             if not q.empty():self.asignar(q.get())
             if not self.lis.es_vacia() and self.proceso==None:
@@ -82,40 +83,80 @@ class Procesador(threading.Thread):
 
 class cliente:
     def __init__(self):
+        self.numPo=0
+        self.numMa=0
+        self.numEn=0
+        
         self.recursos=[rs.Horno(),rs.Cuchillos(),rs.Licuadora()]
+        
         self.cola1=queue.Queue()
         self.cola1.put(ps.Malteada(0,self.recursos[2]))
+        self.numMa+=1
+
         self.cola2=queue.Queue()
         self.cola2.put(ps.PolloConPapas(0,self.recursos[0]))
+        self.numPo+=1
+
         self.cola3=queue.Queue()
-        self.cola3.put(ps.Ensalada(0,self.recursos[1]))
+        self.cola3.put(ps.Ensalada(0,self.recursos[1])) 
+        self.numEn+=1
+
+        self.colaProcesadores=queue.Queue()
         
         self.procesador1=Procesador(1,self.cola1)        
         self.procesador2=Procesador(2,self.cola2)      
         self.procesador3=Procesador(3,self.cola3)
+
     def iniciar(self):
         self.procesador1.start()
         self.procesador2.start()
         self.procesador3.start()
         self.cola1.put(ps.Malteada(1,self.recursos[2]))
+        self.numMa+=1
         self.cola2.put(ps.PolloConPapas(1,self.recursos[0]))
+        self.numPo+=1
         self.cola3.put(ps.PolloConPapas(2,self.recursos[0]))
+        self.numPo+=1
         self.cola1.put(ps.Malteada(2,self.recursos[2]))
+        self.numMa+=1
         self.cola2.put(ps.Ensalada(1,self.recursos[1]))
+        self.numEn+=1
         self.cola3.put(ps.PolloConPapas(3,self.recursos[0]))
+        self.numPo+=1
         self.cola2.put(ps.Malteada(3,self.recursos[2]))
+        self.numMa+=1
         self.cola1.put(ps.Ensalada(2,self.recursos[1]))
+        self.numEn+=1
         self.cola2.put(ps.Ensalada(3,self.recursos[1]))
+        self.numEn+=1
         self.cola1.put(ps.Malteada(4,self.recursos[2]))
+        self.numMa+=1
         self.cola3.put(ps.PolloConPapas(4,self.recursos[0]))
+        self.numPo+=1
         self.cola1.put(ps.Ensalada(4,self.recursos[1]))
+        self.numEn+=1
         self.cola1.put(ps.Malteada(5,self.recursos[2]))
-
+        self.numMa+=1
+        
         self.cola1.join()
         self.cola2.join()
         self.cola3.join()
+        for i in range(10):
+            print(self.crear_pedido_aleatorio())
 
-         
+    def crear_pedido_aleatorio(self):
+        aleatorio=np.random.randint(3)
+        if aleatorio==0:
+            a=ps.PolloConPapas(self.numPo,self.recursos[0])
+            self.numPo+=1
+        elif aleatorio==1:
+            a=ps.Ensalada(self.numEn,self.recursos[1])
+            self.numEn+=1
+        else:
+            a= ps.Malteada(self.numMa,self.recursos[2])
+            self.numMa+=1
+        return a
+
 
 cliente = cliente()
 cliente.iniciar()
