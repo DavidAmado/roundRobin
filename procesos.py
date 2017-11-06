@@ -39,3 +39,4 @@ class Ensalada(Proceso):
     def __init__(self,idProceso,recurso,quantum=0,nombre="Ensalada",t=15,tr=0):
         Proceso.__init__(self,idProceso,quantum,nombre,recurso,t,tr)
 
+

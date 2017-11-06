@@ -11,6 +11,7 @@ class Procesador(threading.Thread):
         self.idProcesador=idProcesador 
         self.proceso=None
         self.lis=cola.Cola()
+        self.ter=cola.Cola()
         self.blo=cola.Cola()
         self.sus=cola.Cola()
         self._args=args
@@ -22,7 +23,6 @@ class Procesador(threading.Thread):
             self.usarProcesador(*self._args)
     def usarProcesador(self,q):
         while not self.proceso==None or not q.empty() or not self.lis.es_vacia() or not self.sus.es_vacia() or not self.blo.es_vacia():
-            
             time.sleep(0.01)
             
             if not q.empty():self.asignar(q.get())
@@ -36,47 +36,72 @@ class Procesador(threading.Thread):
                 else:
                     print("\nel proceso",posible,"requiere de un recurso ocupado, encolando en bloqueado")
                     self.blo.encolar(posible)
+            
+            self.contarColaBlo()
+            self.contarColaLis()            
             self.revisarColaSus()
             self.revisarColaBlo()
-            self.contarColaLis()
+            
             if not self.proceso==None:
                 self.proceso.procesar()
                 if self.proceso.t>0 and self.proceso.quantum==0:
                     self.proceso.tr=5
-                    self.sus.encolar(self.proceso)
                     self.proceso.recurso.libre=True
+                    self.sus.encolar(self.proceso)
                     print("\nse reencolo el proceso",self.proceso,"a suspendidos")
                     self.proceso=None
                 elif self.proceso.t==0:
                     self.proceso.recurso.libre=True                    
                     print("\nterminando proceso",self.proceso,"en el procesador",self,",sus",self.proceso.sus,",lis",self.proceso.lis,",blo",self.proceso.blo,",zona critica",self.proceso.zc)
+                    self.ter.encolar(self.proceso)
                     self.proceso=None
                     q.task_done()
-        print("termino el procesador",self)
+        print("termino el procesador",self,"lista de tareas completadas en este procesador:")
+        for i in range(self.ter.tam):
+            print(self.ter.desencolar())
         self.uso=False
-    def revisarColaSus(self):
-        for i in range(len(self.sus.items)):
-            self.sus.items[i].tr-=1
-            self.sus.items[i].sus+=1
-        if not self.sus.es_vacia():
-            print(self.sus.items[0],"tr",self.sus.items[0].tr)
-            if self.sus.items[0].tr==0:
-                a=self.sus.desencolar()
-                self.asignar(a)
-                print("\nse saco el proceso",a,"de la cola de suspendidos y entro a la cola de listo")
-    def revisarColaBlo(self):
         
-        for i in self.blo.items:
-            if i.recurso.libre:
-                i.blo+=1
-                a=self.blo.desencolar(self.blo.items.index(i))
-                self.asignar(a)
-                print("\nse saco el proceso",a," de la cola de bloqueados y entro en la cola de listos")
+    def revisarColaSus(self):
+        tam = self.sus.tam
+        for i in range(tam):
+            n=self.sus.desencolar()
+            n.tr-=1
+            n.sus+=1
+            if n.tr==0:
+                self.asignar(n)
+                print("\nse saco el proceso",n,"de la cola de suspendidos y entro a la cola de listo")
+            else:
+                self.sus.encolar(n)
+
+
+                
+    def revisarColaBlo(self):
+
+        for i in range(self.blo.tam):
+            posible=self.blo.desencolar()
+            print(posible,posible.recurso,posible.recurso.libre)
+            if posible.recurso.libre:
+                self.asignar(posible)
+                print("\nse saco el proceso",posible," de la cola de bloqueados y entro en la cola de listos")
+            else:
+                self.blo.encolar(posible)
 
     def contarColaLis(self):
-        for i in self.lis.items:
-            i.lis+=1
+        tam = self.lis.tam
 
+        for i in range(tam):
+            n=self.lis.desencolar()
+            n.lis+=1
+            self.lis.encolar(n)
+            
+
+    def contarColaBlo(self):
+        tam = self.blo.tam
+        for i in range(self.blo.tam):
+            n=self.blo.desencolar()
+            n.blo+=1
+            self.blo.encolar(n)
+    
     def asignar(self,proceso):
         proceso.quantum=proceso.asignarQ()
         self.lis.encolar(proceso)
@@ -141,8 +166,8 @@ class cliente:
         self.cola1.join()
         self.cola2.join()
         self.cola3.join()
-        for i in range(10):
-            print(self.crear_pedido_aleatorio())
+
+
 
     def crear_pedido_aleatorio(self):
         aleatorio=np.random.randint(3)

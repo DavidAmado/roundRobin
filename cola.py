@@ -1,21 +1,43 @@
 # -*- coding: utf-8 -*-
+class Nodo:
+    def __init__(self,info):
+        self.info=info
+        self.sig=None
+
 class Cola:
-	""" Representa una cola con operaciones de encolar, desencolar y verificar si está vacía. """
-	def __init__(self):
-        	""" Crea una cola vacía. """
-		# La cola vacía se representa con una lista vacía
-        	self.items=[]
-	def encolar(self, x):
-	        """ Agrega el elemento x a la cola. """
-	        # Encolar es agregar al final de la cola.
-	        self.items.append(x)
-	def desencolar(self,n=0):
-	        """ Devuelve el elemento inicial y lo elimina de la cola.
-	            Si la cola está vacía levanta una excepción. """
-	        try:
-	            return self.items.pop(n)
-	        except IndexError:
-	            raise ValueError("La cola está vacía")
-	def es_vacia(self):
-		""" Devuelve True si la lista está vacía, False si no. """
-		return self.items == []
+    def __init__(self):
+        self.cabeza=None
+        self.cola=None
+        self.tam=0
+
+    def encolar(self, x):
+        nuevo=Nodo(x)
+        if self.cabeza==None:
+            self.cabeza=nuevo
+            self.cola=nuevo
+            self.tam+=1
+            return True
+        self.cola.sig=nuevo
+        self.cola=nuevo
+        self.tam+=1
+        return True
+        
+    
+    def desencolar(self,n=0):
+        x=None
+        if self.cabeza==None:
+            print("no hay elementos")
+            return None
+        elif n==0:
+            x=self.cabeza
+            self.cabeza=x.sig
+            
+        else:
+            for i in range(n):
+                x=x.sig
+
+        self.tam-=1
+        return x.info
+    
+    def es_vacia(self):
+        return self.cabeza==None

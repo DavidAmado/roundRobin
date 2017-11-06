@@ -30,3 +30,4 @@ class Licuadora(Recurso):
         Recurso.__init__(self,nombre)
 
 
+
