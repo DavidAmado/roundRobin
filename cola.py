@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 class Nodo:
+
     def __init__(self,info):
         self.info=info
         self.sig=None
 
 class Cola:
+
     def __init__(self):
         self.cabeza=None
         self.cola=None
